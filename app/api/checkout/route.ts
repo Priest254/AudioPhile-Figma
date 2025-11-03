@@ -77,19 +77,20 @@ export async function POST(req: Request) {
         })
 
         if (emailData.error) {
-          const errorMessage = emailData.error?.message || 'Unknown error'
-          const statusCode = emailData.error?.statusCode || 'Unknown'
+          const error = emailData.error as any
+          const errorMessage = error?.message || 'Unknown error'
+          const statusCode = error?.statusCode || (error as any)?.status || 'Unknown'
           
           console.error('❌ Resend API Error:', {
             statusCode,
             message: errorMessage,
             fromEmail: FROM_EMAIL,
             toEmail: body.customer.email,
-            fullError: emailData.error
+            fullError: error
           })
 
           // Provide helpful guidance for common errors
-          if (statusCode === 403 && errorMessage.includes('domain is not verified')) {
+          if (statusCode === 403 && errorMessage?.includes('domain is not verified')) {
             console.error('')
             console.error('🔧 SOLUTION:')
             console.error('  Resend requires domain verification for custom email addresses.')

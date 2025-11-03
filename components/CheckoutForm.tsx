@@ -1,8 +1,9 @@
 'use client'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useCart } from '@/contexts/CartContext'
 
 const phoneRegex = /^\+?[\d\s\-\(\)]{7,20}$/
 
@@ -21,9 +22,19 @@ const CheckoutSchema = z.object({
 type CheckoutFormData = z.infer<typeof CheckoutSchema>
 
 export default function CheckoutForm({ cart }: { cart: any[] }) {
+  const { clearCart } = useCart()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false)
   const submitButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Listen for clearCart event after successful checkout
+  useEffect(() => {
+    const handleClearCart = () => {
+      clearCart()
+    }
+    window.addEventListener('clearCart', handleClearCart)
+    return () => window.removeEventListener('clearCart', handleClearCart)
+  }, [clearCart])
 
   // Validate cart items
   const validCart = cart.filter(item => 
@@ -96,6 +107,9 @@ export default function CheckoutForm({ cart }: { cart: any[] }) {
       if (!json.orderId) {
         throw new Error('Order ID not received. Please contact support.')
       }
+
+      // Clear cart after successful order
+      clearCart()
 
       // Redirect to order confirmation
       window.location.href = `/order/${json.orderId}`

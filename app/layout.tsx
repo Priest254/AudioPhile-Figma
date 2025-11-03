@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import './globals.css'
 import React from 'react'
+import { CartProvider } from '@/contexts/CartContext'
+import CartIcon from '@/components/CartIcon'
 
 export const metadata = { 
   title: 'Audiophile - Premium Audio Equipment',
@@ -11,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
+        <CartProvider>
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
           <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 md:h-20">
@@ -30,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                   Checkout
                 </Link>
+                <CartIcon />
               </nav>
             </div>
           </div>
@@ -68,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        </CartProvider>
       </body>
     </html>
   )

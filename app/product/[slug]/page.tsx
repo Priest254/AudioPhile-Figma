@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getProductBySlug, getAllProducts } from '@/lib/products'
 import { Product } from '@/lib/products'
+import AddToCart from '@/components/AddToCart'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -106,29 +107,7 @@ export default async function ProductPage({ params }: Props) {
               KES {(product.price * 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center border border-gray-300 rounded">
-                <button
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
-                  aria-label="Decrease quantity"
-                >
-                  -
-                </button>
-                <span className="px-6 py-2 font-semibold min-w-[60px] text-center">1</span>
-                <button
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-              <Link
-                href="/checkout"
-                className="flex-1 px-6 py-3 bg-brand-900 text-white font-semibold uppercase tracking-wider hover:bg-opacity-90 transition-colors text-center"
-              >
-                Add to Cart
-              </Link>
-            </div>
+            <AddToCart product={product} />
           </div>
         </div>
 

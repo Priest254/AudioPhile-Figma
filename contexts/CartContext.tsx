@@ -60,7 +60,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id)
       
       if (existingItem) {
-        // Update quantity if item already exists
+        // Update quantity if item already exists - replace with new quantity
         const newQuantity = item.quantity !== undefined 
           ? item.quantity 
           : existingItem.quantity + 1

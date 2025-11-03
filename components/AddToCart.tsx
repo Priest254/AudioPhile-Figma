@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import Link from 'next/link'
 
@@ -13,20 +13,42 @@ type AddToCartProps = {
 }
 
 export default function AddToCart({ product }: AddToCartProps) {
-  const { addToCart } = useCart()
-  const [quantity, setQuantity] = useState(1)
+  const { addToCart, cart } = useCart()
+  const productId = `prod_${product.id}`
+  const existingCartItem = cart.find(item => item.id === productId)
+  
+  const [quantity, setQuantity] = useState(existingCartItem?.quantity || 1)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+
+  // Sync quantity with cart if item already exists
+  useEffect(() => {
+    if (existingCartItem) {
+      setQuantity(existingCartItem.quantity)
+    } else {
+      // Reset to 1 if item is not in cart
+      setQuantity(1)
+    }
+  }, [existingCartItem?.quantity, cart])
 
   const handleAddToCart = () => {
+    const wasInCart = !!existingCartItem
+    const previousQuantity = existingCartItem?.quantity || 0
+    
     addToCart({
-      id: `prod_${product.id}`,
+      id: productId,
       name: product.name,
       price: product.price * 100, // Convert to cents
       slug: product.slug,
       quantity
     })
     
-    // Show success message
+    // Show success message with updated quantity
+    const message = wasInCart 
+      ? `Updated quantity from ${previousQuantity} to ${quantity} ${product.name}${quantity > 1 ? 's' : ''} in cart!`
+      : `Added ${quantity} ${product.name}${quantity > 1 ? 's' : ''} to cart!`
+    
+    setSuccessMessage(message)
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 3000)
   }
@@ -77,7 +99,7 @@ export default function AddToCart({ product }: AddToCartProps) {
           aria-live="polite"
           className="p-4 bg-green-50 border border-green-200 rounded-md text-green-800 text-sm font-medium animate-fade-in"
         >
-          ✓ Added {quantity} {product.name} to cart!
+          ✓ {successMessage}
           <Link 
             href="/checkout" 
             className="ml-2 underline hover:no-underline"

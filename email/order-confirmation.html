@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f6f7fb; color:#111 }
+.wrapper { max-width:600px; margin:20px auto; background:#ffffff; padding:20px; border-radius:8px; }
+.header { text-align:center; padding-bottom:10px; border-bottom:1px solid #eee }
+.items { width:100%; margin-top:20px; }
+.item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f2f2f2 }
+.total { font-weight:700; font-size:18px }
+.footer { font-size:13px; color:#666; margin-top:20px; text-align:center }
+@media (max-width:480px){
+  .wrapper{padding:12px}
+  .item{font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h2>Thanks for your order, {{customerName}}!</h2>
+    <p>Order #{{orderId}}</p>
+  </div>
+
+  <div>
+    <table class="items" role="presentation">
+      {{#items}}
+      <tr class="item">
+        <td>{{name}} x {{quantity}}</td>
+        <td align="right">KES {{price}}</td>
+      </tr>
+      {{/items}}
+    </table>
+
+    <div style="margin-top:16px;">
+      <p>Subtotal: KES {{subtotal}}</p>
+      <p>Shipping: KES {{shipping}}</p>
+      <p>Taxes: KES {{taxes}}</p>
+      <p class="total">Total: KES {{total}}</p>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <p>Shipping to:</p>
+    <p>{{addressLine1}}<br/>{{city}}, {{country}}</p>
+  </div>
+
+  <div class="footer">
+    <p>If you need help, contact <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+    <p><a href="{{viewOrderUrl}}">View your order</a></p>
+  </div>
+</div>
+</body>
+</html>

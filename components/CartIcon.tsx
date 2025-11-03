@@ -8,7 +8,7 @@ export default function CartIcon() {
 
   return (
     <Link
-      href="/checkout"
+      href="/cart"
       className="relative flex items-center justify-center w-10 h-10 text-gray-700 hover:text-brand-900 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-900 focus:ring-offset-2 rounded"
       aria-label={`Shopping cart with ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
     >

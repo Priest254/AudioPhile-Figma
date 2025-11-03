@@ -101,7 +101,7 @@ export default function AddToCart({ product }: AddToCartProps) {
         >
           ✓ {successMessage}
           <Link 
-            href="/checkout" 
+            href="/cart" 
             className="ml-2 underline hover:no-underline"
           >
             View Cart

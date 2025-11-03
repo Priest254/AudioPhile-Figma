@@ -12,14 +12,58 @@ What's included:
 - Jest + React Testing Library unit tests for the checkout form.
 - Vercel config and GitHub Actions workflow for CI.
 
-Set environment variables in `.env.local` (or Vercel):
-```
-CONVEX_URL=<your_convex_url>
-RESEND_API_KEY=<your_resend_api_key>
-FROM_EMAIL=orders@yourdomain.com
+## Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# Convex Configuration
+CONVEX_URL=your_convex_deployment_url
+NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
+
+# Resend Email Configuration
+RESEND_API_KEY=re_your_resend_api_key_here
+FROM_EMAIL=onboarding@resend.dev
 SUPPORT_EMAIL=support@yourdomain.com
+
+# Application URL
 NEXT_PUBLIC_URL=http://localhost:3000
 ```
+
+### Setting up Resend Email:
+
+1. **Sign up for Resend**: Go to https://resend.com and create an account
+2. **Get your API Key**:
+   - Go to Resend Dashboard → API Keys
+   - Create a new API key
+   - Copy the key (starts with `re_`)
+   - Add it to `.env.local` as `RESEND_API_KEY`
+
+3. **Configure FROM_EMAIL**:
+   - **For testing**: Use `FROM_EMAIL=onboarding@resend.dev` (works immediately, no setup needed)
+   - **IMPORTANT**: You CANNOT use Gmail, Yahoo, Hotmail, or other common email providers
+   - **For production**: Verify your own domain in Resend Dashboard and use `orders@yourdomain.com`
+   
+   **Common mistake**: Trying to use `FROM_EMAIL=yourname@gmail.com` will fail with a 403 error because Resend doesn't allow sending from unverified domains like gmail.com
+
+4. **Verify your domain** (production only):
+   - Go to Resend Dashboard → Domains
+   - Add your domain
+   - Add the DNS records Resend provides
+   - Wait for verification (usually a few minutes)
+
+### Setting up Convex:
+
+1. **Install and initialize Convex**:
+   ```bash
+   npx convex dev
+   ```
+   This will:
+   - Create your Convex deployment
+   - Set up `CONVEX_URL` automatically
+   - Generate the API files
+
+2. **Use the generated URL**: The `CONVEX_URL` will be set automatically during `npx convex dev`
 
 Run locally:
 ```

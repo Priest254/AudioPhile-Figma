@@ -1,7 +1,13 @@
-import { query } from 'convex/server'
+import { query } from '../_generated/server'
+import { v } from 'convex/values'
 
-export default query(async ({ db }, orderId: string) => {
-  const orders = await db.query('orders').collect()
-  const order = orders.find((o: any) => o.orderId === orderId)
-  return order || null
+export const getOrderByOrderId = query({
+  args: {
+    orderId: v.string()
+  },
+  handler: async (ctx, args) => {
+    const orders = await ctx.db.query('orders').collect()
+    const order = orders.find((o: any) => o.orderId === args.orderId)
+    return order || null
+  }
 })

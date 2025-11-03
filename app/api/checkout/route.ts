@@ -1,20 +1,43 @@
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import fetch from 'node-fetch'
-import { Convex } from 'convex/server'
+import { fetchMutation } from 'convex/nextjs'
+import { api } from '@/convex/_generated/api'
+import { Resend } from 'resend'
 
-const CONVEX_URL = process.env.CONVEX_URL || ''
+const CONVEX_URL = process.env.CONVEX_URL || process.env.NEXT_PUBLIC_CONVEX_URL || ''
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
-const FROM_EMAIL = process.env.FROM_EMAIL || 'orders@example.com'
+// Use Resend's default test email for development/testing - works immediately without domain verification
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev'
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@example.com'
 
-const convex = new Convex({ url: CONVEX_URL })
+// Initialize Resend client
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
+
+// List of common email domains that require verification in Resend
+const UNVERIFIED_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com']
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     if (!body?.customer?.email || !body?.items) {
       return NextResponse.json({ message: 'Invalid payload' }, { status: 400 })
+    }
+
+    // Validate email configuration
+    if (!RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY is not set in environment variables. Email will not be sent.')
+      console.warn('Please set RESEND_API_KEY in your .env.local file')
+    }
+
+    // Check if FROM_EMAIL uses an unverified domain
+    const fromEmailDomain = FROM_EMAIL.split('@')[1]?.toLowerCase()
+    if (fromEmailDomain && UNVERIFIED_DOMAINS.includes(fromEmailDomain)) {
+      console.error('❌ ERROR: Cannot send from unverified email domains like gmail.com, yahoo.com, etc.')
+      console.error('Resend does not allow sending from common email providers.')
+      console.error('Solutions:')
+      console.error('  1. For testing: Use FROM_EMAIL=onboarding@resend.dev (works immediately)')
+      console.error('  2. For production: Verify your own domain at https://resend.com/domains')
+      console.error(`  Current FROM_EMAIL: ${FROM_EMAIL}`)
     }
 
     const orderId = uuidv4()
@@ -29,29 +52,76 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString()
     }
 
-    await convex.run('createOrder', orderDoc)
+    // Call Convex mutation function
+    await fetchMutation(api.functions.createOrder.createOrder, orderDoc)
 
-    const emailHtml = buildEmailHtml(orderDoc, SUPPORT_EMAIL)
-    const emailRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [body.customer.email],
-        subject: `Order confirmation — ${orderId}`,
-        html: emailHtml
+    // Send confirmation email
+    try {
+      if (!resend) {
+        console.error('Resend client not initialized. RESEND_API_KEY is missing.')
+        // Continue without email - order is still created
+      } else {
+        const emailHtml = buildEmailHtml(orderDoc, SUPPORT_EMAIL)
+        
+        console.log('Attempting to send email:', {
+          from: FROM_EMAIL,
+          to: body.customer.email,
+          hasResendClient: !!resend
+        })
+
+        const emailData = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: [body.customer.email],
+          subject: `Order confirmation — ${orderId}`,
+          html: emailHtml
+        })
+
+        if (emailData.error) {
+          const errorMessage = emailData.error?.message || 'Unknown error'
+          const statusCode = emailData.error?.statusCode || 'Unknown'
+          
+          console.error('❌ Resend API Error:', {
+            statusCode,
+            message: errorMessage,
+            fromEmail: FROM_EMAIL,
+            toEmail: body.customer.email,
+            fullError: emailData.error
+          })
+
+          // Provide helpful guidance for common errors
+          if (statusCode === 403 && errorMessage.includes('domain is not verified')) {
+            console.error('')
+            console.error('🔧 SOLUTION:')
+            console.error('  Resend requires domain verification for custom email addresses.')
+            console.error('  For testing, use: FROM_EMAIL=onboarding@resend.dev')
+            console.error('  For production, verify your domain at: https://resend.com/domains')
+            console.error('')
+          }
+        } else {
+          console.log('Email sent successfully:', {
+            emailId: emailData.data?.id,
+            to: body.customer.email,
+            from: FROM_EMAIL
+          })
+        }
+      }
+    } catch (emailError: any) {
+      console.error('Email sending error:', {
+        message: emailError.message,
+        stack: emailError.stack,
+        fromEmail: FROM_EMAIL,
+        toEmail: body.customer.email,
+        errorDetails: emailError
       })
-    })
-    if (!emailRes.ok) {
-      console.error('Resend error', await emailRes.text())
+      // Continue even if email fails - order is still created
     }
 
     return NextResponse.json({ orderId }, { status: 201 })
   } catch (err: any) {
-    console.error('Checkout error', err)
+    console.error('Checkout error:', {
+      message: err.message,
+      stack: err.stack
+    })
     return NextResponse.json({ message: 'Server error' }, { status: 500 })
   }
 }
